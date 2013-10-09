@@ -8,6 +8,13 @@ module ActiveRecordPartitioning
   # eager loading ConnectionHandler
   ActiveRecord::ConnectionAdapters::AbstractAdapter
   class Handler < ActiveRecord::ConnectionAdapters::ConnectionHandler
+    attr_reader :base_config
+
+    def initialize(base_config, pools)
+      @connection_pools = pools
+      @base_config = base_config
+    end
+
     def establish_connection(name, spec)
       @connection_pools[connection_pool_key(spec.config)] = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
     end
@@ -16,7 +23,7 @@ module ActiveRecordPartitioning
       config = Thread.current[:current_connection_pool_config]
       pool = @connection_pools[connection_pool_key(config)]
       return pool if pool
-      ActiveRecord::Base.establish_connection(config)
+      ActiveRecord::Base.establish_connection(@base_config.merge(config.symbolize_keys))
     end
 
     private
@@ -26,8 +33,8 @@ module ActiveRecordPartitioning
   end
 
   module_function
-  def setup(pools = {})
-    ActiveRecord::Base.connection_handler = Handler.new(pools)
+  def setup(base_config = {}, pools = {})
+    ActiveRecord::Base.connection_handler = Handler.new(base_config, pools)
   end
 
   def with_connection_pool(config)
