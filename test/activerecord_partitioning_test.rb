@@ -39,6 +39,14 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
     assert_equal({:adapter => 'sqlite3', :database => '/tmp/newdb'}, config)
   end
 
+  def test_with_connection_pool_should_handle_nil_config_argument
+    ActiveRecordPartitioning.setup(:database, default_config)
+    config = ActiveRecordPartitioning.with_connection_pool(nil) do
+      ActiveRecord::Base.connection_pool.spec.config
+    end
+    assert_equal(default_config.symbolize_keys, config)
+  end
+
   def test_should_raise_error_when_accessing_connection_pool_without_specifying_pool_config
     ActiveRecordPartitioning.setup(:database)
     ActiveRecordPartitioning.with_connection_pool(default_config)

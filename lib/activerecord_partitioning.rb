@@ -16,9 +16,10 @@ module ActiveRecordPartitioning
   end
 
   def with_connection_pool(config, &block)
-    self.current_connection_pool_config = config = config.symbolize_keys
+    config.try(:symbolize_keys!)
+    self.current_connection_pool_config = (self.default_config || {}).merge(config || {})
     if ActiveRecord::Base.connection_pool.nil?
-      ActiveRecord::Base.establish_connection((self.default_config || {}).merge(config))
+      ActiveRecord::Base.establish_connection(self.current_connection_pool_config)
     end
     yield if block_given?
   ensure
