@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    activerecord_partitioning (0.0.2)
+    activerecord_partitioning (0.0.3)
       activerecord (= 2.3.18)
 
 GEM
