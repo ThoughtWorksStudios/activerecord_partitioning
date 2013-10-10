@@ -15,7 +15,7 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
     end
     assert_equal '/tmp/db', config1[:database]
 
-    config2 = ActiveRecordPartitioning.with_connection_pool(default_config.merge(:database => '/tmp/db1')) do
+    config2 = ActiveRecordPartitioning.with_connection_pool(default_config.merge('database' => '/tmp/db1')) do
       ActiveRecord::Base.connection_pool.spec.config
     end
     assert_equal '/tmp/db1', config2[:database]
@@ -40,7 +40,17 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
     assert_raise ActiveRecordPartitioning::NoActiveConnectionPoolError do
       ActiveRecord::Base.connection_pool
     end
+    ActiveRecordPartitioning.setup(:database, default_config)
+    assert ActiveRecord::Base.connection_pool
   end
+
+  def test_should_use_default_config_if_no_config_specified
+    assert_nil ActiveRecordPartitioning.current_connection_pool_config
+
+    ActiveRecordPartitioning.setup(:database, default_config)
+    assert_equal default_config.symbolize_keys, ActiveRecordPartitioning.current_connection_pool_config
+  end
+
 
   def test_remove_connection
     ActiveRecordPartitioning.setup(:database)

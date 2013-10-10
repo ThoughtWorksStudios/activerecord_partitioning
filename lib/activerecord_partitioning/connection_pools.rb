@@ -34,6 +34,10 @@ module ActiveRecordPartitioning
       @store.each_value(&block)
     end
 
+    def each(&block)
+      @store.each(&block)
+    end
+
     def size
       @store.size
     end
