@@ -26,6 +26,11 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
     assert_equal config1, config3
   end
 
+  def test_setup_default_config
+    ActiveRecordPartitioning.setup(:database, default_config)
+    assert_equal default_config.symbolize_keys, ActiveRecordPartitioning.default_config
+  end
+
   def test_should_merge_default_spec_config
     ActiveRecordPartitioning.setup(:database, default_config)
     config = ActiveRecordPartitioning.with_connection_pool('database' => '/tmp/newdb') do
