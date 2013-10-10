@@ -3,9 +3,15 @@ require 'activerecord_partitioning/connection_pools'
 
 module ActiveRecordPartitioning
   module_function
-  def setup(base_config = {}, pools = {})
+  def setup(key_name, base_config = {}, store = {})
     @base_config = base_config.symbolize_keys
-    ActiveRecord::Base.connection_handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new(ConnectionPools.new(pools))
+    new_pools = ConnectionPools.new(key_name, store)
+    new_pools.merge!(ActiveRecord::Base.connection_handler.connection_pools)
+    ActiveRecord::Base.connection_handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new(new_pools)
+  end
+
+  def reset_connection_handler
+    ActiveRecord::Base.connection_handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new
   end
 
   def with_connection_pool(config, &block)

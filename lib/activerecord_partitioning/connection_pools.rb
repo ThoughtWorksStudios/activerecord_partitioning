@@ -3,19 +3,26 @@ module ActiveRecordPartitioning
   end
 
   class ConnectionPools
-    attr_reader :store
+    attr_reader :key_name, :store
 
-    def initialize(store={})
+    def initialize(key_name, store={})
+      @key_name = key_name
       @store = store
     end
 
-    def [](key)
+    def merge!(pools)
+      pools.each do |klass_name, pool|
+        self[klass_name] = pool
+      end
+    end
+
+    def [](klass_name)
       config = ActiveRecordPartitioning.current_connection_pool_config
       raise NoActiveConnectionPoolError if config.nil?
       @store[connection_pool_key(config)]
     end
 
-    def []=(key, pool)
+    def []=(klass_name, pool)
       @store[connection_pool_key(pool.spec.config)] = pool
     end
 
@@ -33,7 +40,7 @@ module ActiveRecordPartitioning
 
     private
     def connection_pool_key(config)
-      config[:url]
+      config[@key_name]
     end
   end
 end
