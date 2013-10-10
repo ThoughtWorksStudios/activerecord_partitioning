@@ -4,44 +4,65 @@ require 'active_record'
 
 
 module ActiveRecordPartitioning
+  class NoActiveConnectionPoolError < StandardError
+  end
 
-  # eager loading ConnectionHandler
-  ActiveRecord::ConnectionAdapters::AbstractAdapter
-  class Handler < ActiveRecord::ConnectionAdapters::ConnectionHandler
-    attr_reader :base_config
+  class ConnectionPools
+    attr_reader :store
 
-    def initialize(base_config, pools)
-      @connection_pools = pools
-      @base_config = base_config
+    def initialize(store={})
+      @store = store
     end
 
-    def establish_connection(name, spec)
-      @connection_pools[connection_pool_key(spec.config)] = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
+    def [](key)
+      config = ActiveRecordPartitioning.current_connection_pool_config
+      raise NoActiveConnectionPoolError if config.nil?
+      @store[connection_pool_key(config)]
     end
 
-    def retrieve_connection_pool(klass)
-      config = Thread.current[:current_connection_pool_config]
-      pool = @connection_pools[connection_pool_key(config)]
-      return pool if pool
-      ActiveRecord::Base.establish_connection(@base_config.merge(config.symbolize_keys))
+    def []=(key, pool)
+      @store[connection_pool_key(pool.spec.config)] = pool
+    end
+
+    def delete_if(&block)
+      @store.delete_if(&block)
+    end
+
+    def each_value(&block)
+      @store.each_value(&block)
+    end
+
+    def size
+      @store.size
     end
 
     private
     def connection_pool_key(config)
-      config['url']
+      config[:url]
     end
   end
 
   module_function
   def setup(base_config = {}, pools = {})
-    ActiveRecord::Base.connection_handler = Handler.new(base_config, pools)
+    @base_config = base_config.symbolize_keys
+    ActiveRecord::Base.connection_handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new(ConnectionPools.new(pools))
   end
 
-  def with_connection_pool(config)
-    Thread.current[:current_connection_pool_config] = config
-    yield
+  def with_connection_pool(config, &block)
+    self.current_connection_pool_config = config = config.symbolize_keys
+    if ActiveRecord::Base.connection_pool.nil?
+      ActiveRecord::Base.establish_connection(@base_config.merge(config))
+    end
+    yield if block_given?
   ensure
-    Thread.current[:current_connection_pool_config] = nil
+    self.current_connection_pool_config = nil
   end
 
+  def current_connection_pool_config
+    Thread.current[:current_connection_pool_config]
+  end
+
+  def current_connection_pool_config=(config)
+    Thread.current[:current_connection_pool_config] = config
+  end
 end
