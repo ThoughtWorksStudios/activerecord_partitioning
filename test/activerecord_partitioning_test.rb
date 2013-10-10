@@ -10,10 +10,20 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
 
   def test_setup_new_connection_pool_by_config
     ActiveRecordPartitioning.setup(:database)
-    config = ActiveRecordPartitioning.with_connection_pool(default_config) do
+    config1 = ActiveRecordPartitioning.with_connection_pool(default_config) do
       ActiveRecord::Base.connection_pool.spec.config
     end
-    assert_equal '/tmp/db', config[:database]
+    assert_equal '/tmp/db', config1[:database]
+
+    config2 = ActiveRecordPartitioning.with_connection_pool(default_config.merge(:database => '/tmp/db1')) do
+      ActiveRecord::Base.connection_pool.spec.config
+    end
+    assert_equal '/tmp/db1', config2[:database]
+
+    config3 = ActiveRecordPartitioning.with_connection_pool(default_config) do
+      ActiveRecord::Base.connection_pool.spec.config
+    end
+    assert_equal config1, config3
   end
 
   def test_should_merge_default_spec_config
