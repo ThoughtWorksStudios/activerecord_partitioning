@@ -3,6 +3,8 @@ module ActiveRecordPartitioning
   end
 
   class ConnectionPools
+    include Enumerable
+
     attr_reader :key_name, :store
 
     def initialize(key_name, store={})
@@ -36,6 +38,14 @@ module ActiveRecordPartitioning
 
     def each(&block)
       @store.each(&block)
+    end
+
+    def values
+      @store.values
+    end
+
+    def keys
+      @store.keys
     end
 
     def size
