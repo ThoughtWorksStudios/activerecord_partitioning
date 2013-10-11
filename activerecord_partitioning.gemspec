@@ -16,5 +16,5 @@ Gem::Specification.new do |gem|
 
   gem.name          = "activerecord_partitioning"
   gem.require_paths = ["lib"]
-  gem.version       = '0.0.6'
+  gem.version       = '0.0.7'
 end

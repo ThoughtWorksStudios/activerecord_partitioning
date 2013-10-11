@@ -64,7 +64,6 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
     assert_equal default_config.symbolize_keys, ActiveRecordPartitioning.current_connection_pool_config
   end
 
-
   def test_remove_connection
     ActiveRecordPartitioning.setup(:database)
     ActiveRecordPartitioning.with_connection_pool(default_config) do
@@ -79,6 +78,17 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
     ActiveRecordPartitioning.setup(:database)
     assert_equal 1, ActiveRecord::Base.connection_handler.connection_pools.size
     assert_equal({'/tmp/db' => pool}, ActiveRecord::Base.connection_handler.connection_pools.store)
+  end
+
+  def test_switch_connection_pool_multiple_times
+    ActiveRecordPartitioning.setup(:database, default_config)
+    ActiveRecordPartitioning.with_connection_pool('database' => '/tmp/db1') do
+      ActiveRecordPartitioning.with_connection_pool('database' => '/tmp/db2') do
+        assert_equal '/tmp/db2', ActiveRecord::Base.connection_pool.spec.config[:database]
+      end
+      assert_equal '/tmp/db1', ActiveRecord::Base.connection_pool.spec.config[:database]
+    end
+    assert_nil ActiveRecord::Base.connection_pool
   end
 
   def default_config

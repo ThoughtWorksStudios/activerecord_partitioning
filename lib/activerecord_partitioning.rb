@@ -17,13 +17,15 @@ module ActiveRecordPartitioning
 
   def with_connection_pool(config, &block)
     config.try(:symbolize_keys!)
-    self.current_connection_pool_config = (self.default_config || {}).merge(config || {})
+    origin = Thread.current[:current_connection_pool_config]
+    Thread.current[:current_connection_pool_config] = (self.default_config || {}).merge(config || {})
     if ActiveRecord::Base.connection_pool.nil?
       ActiveRecord::Base.establish_connection(self.current_connection_pool_config)
     end
     yield if block_given?
   ensure
-    self.current_connection_pool_config = nil
+    ActiveRecord::Base.clear_active_connections!
+    Thread.current[:current_connection_pool_config] = origin
   end
 
   def default_config
@@ -36,9 +38,5 @@ module ActiveRecordPartitioning
 
   def current_connection_pool_config
     Thread.current[:current_connection_pool_config] || self.default_config
-  end
-
-  def current_connection_pool_config=(config)
-    Thread.current[:current_connection_pool_config] = config
   end
 end
