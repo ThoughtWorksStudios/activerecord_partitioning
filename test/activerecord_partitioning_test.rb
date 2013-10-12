@@ -55,19 +55,13 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
     assert_equal pool, ActiveRecord::Base.connection_pool
   end
 
-  def test_should_raise_error_when_there_is_no_connection_pool
+  def test_should_return_nil_when_there_is_no_connection_pool
     ActiveRecordPartitioning.setup(:database)
 
-    assert_raise ActiveRecordPartitioning::NoActiveConnectionPoolError do
-      ActiveRecord::Base.connection_pool
-    end
+    assert_nil ActiveRecord::Base.connection_pool
 
     ActiveRecordPartitioning.with_connection_pool(default_config)
-    ActiveRecordPartitioning.with_connection_pool(default_config.merge('database' => '/tmp/db2'))
-
-    assert_raise ActiveRecordPartitioning::NoActiveConnectionPoolError do
-      ActiveRecord::Base.connection_pool
-    end
+    assert ActiveRecord::Base.connection_pool
   end
 
   def test_should_raise_error_when_no_pool_specified_and_there_are_more_than_two_pools
