@@ -24,7 +24,7 @@ module ActiveRecordPartitioning
         if size == 1
           values.first
         else
-          raise NoActiveConnectionPoolError
+          raise NoActiveConnectionPoolError.new("#{size} connection pools in cache, keys: #{keys.inspect}, pool configs: #{values.map(&:spec).map(&:config).inspect}")
         end
       else
         @store[connection_pool_key(config)]
