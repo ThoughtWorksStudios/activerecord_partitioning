@@ -10,8 +10,9 @@ module ActiveRecordPartitioning
     ActiveRecord::Base.connection_handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new(new_pools)
   end
 
-  def reset_connection_handler
+  def reset
     self.default_config = nil
+    ActiveRecord::Base.clear_active_connections!
     ActiveRecord::Base.connection_handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new
   end
 

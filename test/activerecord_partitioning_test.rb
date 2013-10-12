@@ -5,7 +5,7 @@ require "activerecord_partitioning"
 class ActiveRecordPartitioningTest < Test::Unit::TestCase
 
   def teardown
-    ActiveRecordPartitioning.reset_connection_handler
+    ActiveRecordPartitioning.reset
   end
 
   def test_setup_new_connection_pool_by_config
