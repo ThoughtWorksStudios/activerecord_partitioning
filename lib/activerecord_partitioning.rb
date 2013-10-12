@@ -37,6 +37,6 @@ module ActiveRecordPartitioning
   end
 
   def current_connection_pool_config
-    Thread.current[:current_connection_pool_config] || self.default_config
+    Thread.current[:current_connection_pool_config]
   end
 end

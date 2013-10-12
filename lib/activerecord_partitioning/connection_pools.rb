@@ -20,8 +20,15 @@ module ActiveRecordPartitioning
 
     def [](klass_name)
       config = ActiveRecordPartitioning.current_connection_pool_config
-      raise NoActiveConnectionPoolError if config.nil?
-      @store[connection_pool_key(config)]
+      if config.nil?
+        if size == 1
+          values.first
+        else
+          raise NoActiveConnectionPoolError
+        end
+      else
+        @store[connection_pool_key(config)]
+      end
     end
 
     def []=(klass_name, pool)

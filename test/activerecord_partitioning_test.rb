@@ -47,21 +47,48 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
     assert_equal(default_config.symbolize_keys, config)
   end
 
-  def test_should_raise_error_when_accessing_connection_pool_without_specifying_pool_config
+  def test_should_always_get_connection_pool_if_there_is_only_one
     ActiveRecordPartitioning.setup(:database)
-    ActiveRecordPartitioning.with_connection_pool(default_config)
+    pool = ActiveRecordPartitioning.with_connection_pool(default_config) do
+      ActiveRecord::Base.connection_pool
+    end
+    assert_equal pool, ActiveRecord::Base.connection_pool
+  end
+
+  def test_should_raise_error_when_there_is_no_connection_pool
+    ActiveRecordPartitioning.setup(:database)
+
     assert_raise ActiveRecordPartitioning::NoActiveConnectionPoolError do
       ActiveRecord::Base.connection_pool
     end
-    ActiveRecordPartitioning.setup(:database, default_config)
-    assert ActiveRecord::Base.connection_pool
+
+    ActiveRecordPartitioning.with_connection_pool(default_config)
+    ActiveRecordPartitioning.with_connection_pool(default_config.merge('database' => '/tmp/db2'))
+
+    assert_raise ActiveRecordPartitioning::NoActiveConnectionPoolError do
+      ActiveRecord::Base.connection_pool
+    end
   end
 
-  def test_should_use_default_config_if_no_config_specified
-    assert_nil ActiveRecordPartitioning.current_connection_pool_config
+  def test_should_raise_error_when_no_pool_specified_and_there_are_more_than_two_pools
+    ActiveRecordPartitioning.setup(:database)
 
-    ActiveRecordPartitioning.setup(:database, default_config)
-    assert_equal default_config.symbolize_keys, ActiveRecordPartitioning.current_connection_pool_config
+    ActiveRecordPartitioning.with_connection_pool(default_config)
+    ActiveRecordPartitioning.with_connection_pool(default_config.merge('database' => '/tmp/db2'))
+
+    assert_raise ActiveRecordPartitioning::NoActiveConnectionPoolError do
+      ActiveRecord::Base.connection_pool
+    end
+    pool = ActiveRecordPartitioning.with_connection_pool(default_config) { ActiveRecord::Base.connection_pool }
+    assert pool
+  end
+
+  def test_no_current_connection_pool_config_by_default
+    ActiveRecordPartitioning.setup(:database)
+    assert_nil ActiveRecordPartitioning.current_connection_pool_config
+    ActiveRecordPartitioning.with_connection_pool(default_config) do
+      assert ActiveRecordPartitioning.current_connection_pool_config
+    end
   end
 
   def test_remove_connection
@@ -88,7 +115,6 @@ class ActiveRecordPartitioningTest < Test::Unit::TestCase
       end
       assert_equal '/tmp/db1', ActiveRecord::Base.connection_pool.spec.config[:database]
     end
-    assert_nil ActiveRecord::Base.connection_pool
   end
 
   def default_config
